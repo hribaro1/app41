@@ -8,42 +8,50 @@ load('api_rpc.js');
 load('api_gpio.js');
 load('api_adc.js');
 
+// set MQTT topics
+
 let topicsubconfig = '/devices/' + Cfg.get('device.id') + '/config';
 let topicsubcommand = '/devices/' + Cfg.get('device.id') + '/commands';
 let topicsubcommandreset = '/devices/' + Cfg.get('device.id') + '/commands/reset';
 let topicpubstate = '/devices/' + Cfg.get('device.id') + '/state';
 let topicpubevents = '/devices/' + Cfg.get('device.id') + '/events/fan';
 
+// declare variables
+
 let speed = Cfg.get('app.pwm.val');
 let oldspeed = Cfg.get('app.old.speed');
 let speedpwm = 50;
 let mqttconnection = true;
 let mqttconnectionnew = true;
-let pin = 0;
-let pin0 = 13;
+
+let pin0 = 13;  //numbers corespond to GPIO pins on ESP
 let pin1 = 12;
 let pin2 = 14;
 let pin3 = 5;
-let analog = 0;
+
 let state0 = 0;
 let state1 = 0;
 let state2 = 0;
 let state3 = 0;
 
-ADC.enable(pin);
+// declare input modes for RF receiver pins
+
 GPIO.set_mode(pin0, GPIO.MODE_INPUT);
 GPIO.set_mode(pin1, GPIO.MODE_INPUT);
 GPIO.set_mode(pin2, GPIO.MODE_INPUT);
 GPIO.set_mode(pin3, GPIO.MODE_INPUT);
 
-function setStateZero() {
+
+// functions declarations START
+
+function setStateZero() {        //puting to 0 input states variables for RF reciver
   state0 = 0;
   state1 = 0;
   state2 = 0;
   state3 = 0;
 }
 
-function setSpeed () {
+function setSpeed () {             //setting speed in percentage PWM based on speed value 1..4 and config parameter for start direction and speed value from server
   if (Cfg.get('app.pwm.gra')){
     //speedpwm=50+12*speed;
     if (speed===0){
@@ -82,12 +90,47 @@ function setSpeed () {
 };
 
 
-setSpeed();
+function SetOldSpeed() {   //setting speed in percentage PWM based on speed value 1..4 and config parameter for start direction based on oldspeed --> return fromboost
+  
+  if (Cfg.get('app.pwm.gra')){
+    //speedpwm=50+12*speed;
+    if (oldspeed===0){
+      speedpwm=50;
+    }
+    if (oldspeed===1){
+      speedpwm=72;
+    }
+    if (oldspeed===2){  
+      speedpwm=83;
+    }  
+    if (oldspeed===3){
+      speedpwm=87;
+    }
+    if (oldspeed===4){
+      speedpwm=91;
+    }
+  }else{
+    //speedpwm=50-12*speed;
+    if (oldspeed===0){
+      speedpwm=50;
+    }
+    if (oldspeed===1){
+      speedpwm=26;
+    }
+    if (oldspeed===2){
+      speedpwm=14;
+    }
+    if (oldspeed===3){
+      speedpwm=9;
+    }
+    if (oldspeed===4){
+      speedpwm=4;
+    }
+  }
+};
 
-print(speedpwm);
-
-mqttconnectionnew = MQTT.isConnected();
-if (mqttconnectionnew === true){
+function mqttReEstablished() {
+ if (mqttconnectionnew === true){
   if (mqttconnection === false){
     let msg = JSON.stringify({type: "startupfan", domId: Cfg.get('app.home'), userId: Cfg.get('app.user'), currentFanSpeed: speed, timeChangeDirection: Cfg.get('app.pwm.time')});
     print(topicpubstate, '->', msg);
@@ -98,10 +141,24 @@ if (mqttconnectionnew === true){
     print ("MQTT povezava je vseskozi aktivna");
     mqttconnection = mqttconnectionnew;
   }
-} else {
+ } else {
   print ("Trenutna MQTT povezava je padla");
   mqttconnection = mqttconnectionnew;
+ }
 };
+
+
+// functions declarations END
+
+
+setSpeed(); //postavi ventilator na začetno hitrost kot nastavljeno v mos.yml parameter - app.pwm.val
+
+print(speedpwm);
+
+mqttconnectionnew = MQTT.isConnected(); //preveri če je mqtt povezan
+
+mqttReEstablished();   //izvede sinhronizacijo na server če prej mqtt ni bil povezan sedaj je pa spet
+
 
 GPIO.set_button_handler(pin0, GPIO.PULL_UP, GPIO.INT_EDGE_NEG, 200,
   function(x) {
@@ -173,93 +230,15 @@ let remotetimer = Timer.set(2000, true, function() {
     }, null);
 
 
-
-
-/*
-let remotetimer = Timer.set(1000, true, function() {
-  analog = 0;
-  state0 = 0;
-  state1 = 0;
-  state2 = 0;
-  state3 = 0;
-  
-  analog = ADC.read(pin);
-  state0 = GPIO.read(pin0);
-  state1 = GPIO.read(pin1);
-  state2 = GPIO.read(pin2);
-  state3 = GPIO.read(pin3);
-
-  if (analog>100){
-    print("Analogna vrednost JE vecja kot 100 in sicer je: ", analog);
-    print("Vrednost vhoda 0 na pin0, D7 vhod: ", state0);
-    print("Vrednost vhoda 1 na pin1, D6 vhod: ", state1);
-    print("Vrednost vhoda 2 na pin2, D5 vhod: ", state2);
-    print("Vrednost vhoda 3 na pin3, D1 vhod: ", state3);
-    if (state0===0 && state1===1 && state2===0 && state3===0) {
-      print("Izkljuci ventilator gre na OFF");
-      speed=0;
-      setSpeed();
-      print ("Mastavitev hitrosti - speedpwm: ", speedpwm);
-      PWet('app.pin'), 1000, speedpwM.set(Cfg.gm/100);
-    };
-    if (state0===0 && state1===0 && state2===1 && state3===0) {
-      print("Ventilator HITROST == 1")
-      speed=1;
-      setSpeed();
-      print ("Mastavitev hitrosti - speedpwm: ", speedpwm);
-      PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
-    };
-    if (state0===1 && state1===0 && state2===1 && state3===0) {
-      print("Ventilator HITROST == 2")
-      speed=2;
-      setSpeed();
-      print ("Mastavitev hitrosti - speedpwm: ", speedpwm);
-      PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
-    };
-    if (state0===0 && state1===1 && state2===1 && state3===0) {
-      print("Ventilator HITROST == 3")
-      speed=3;
-      setSpeed();
-      print ("Mastavitev hitrosti - speedpwm: ", speedpwm);
-      PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
-    };
-    if (state0===0 && state1===1 && state2===1 && state3===1) {
-      print("Ventilator HITROST == 4 --> BOOST")
-      speed=4;
-      setSpeed();
-      print ("Mastavitev hitrosti - speedpwm: ", speedpwm);
-      PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
-    };
-  } else {
-    // print("Analogna vrednost NI vecja kot 100 in sicer je: ", analog);
-  }
-
-}, null);
-
-*/
-
 let oldtimer = Timer.set(Cfg.get('app.pwm.time'), true, function() {
   speedpwm = 99-speed-speedpwm;
   print("PWM set to initial speed:", speedpwm);
   PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
   mqttconnectionnew = MQTT.isConnected();
-  if (mqttconnectionnew === true){
-    if (mqttconnection === false){
-      let msg = JSON.stringify({type: "startupfan", domId: Cfg.get('app.home'), userId: Cfg.get('app.user'), currentFanSpeed: speed, timeChangeDirection: Cfg.get('app.pwm.time')});
-      print(topicpubstate, '->', msg);
-      MQTT.pub(topicpubstate, msg, 1);
-      print ("Objavi podatek na server ker je povezava nazaj --> MQTT connectionnew je: ", mqttconnectionnew);
-      mqttconnection = mqttconnectionnew;
-    } else {
-      print ("MQTT povezava je vseskozi aktivna");
-      mqttconnection = mqttconnectionnew;
-    }
-  } else {
-    print ("Trenutna MQTT povezava je padla");
-    mqttconnection = mqttconnectionnew;
-  }
+  mqttReEstablished();
 }, null);
  
+
 MQTT.sub(topicsubconfig, function(conn, topic, msg) {
   //{“domId”: "dom", “userId”: "usernew", “name”: ”my-fan”, “nightFan”: ”true”, “groupA”: ”false”, "maxNightSpeed":2}
   let obj = JSON.parse(msg) || {};
@@ -313,41 +292,8 @@ MQTT.sub(topicsubconfig, function(conn, topic, msg) {
         print(topicpubevents, '->', msg);
         MQTT.pub(topicpubevents, msg, 1);
       }
-      if (Cfg.get('app.pwm.gra')){
-        //speedpwm=50+12*speed;
-        if (oldspeed===0){
-          speedpwm=50;
-        }
-        if (oldspeed===1){
-          speedpwm=72;
-        }
-        if (oldspeed===2){  
-          speedpwm=83;
-        }  
-        if (oldspeed===3){
-          speedpwm=87;
-        }
-        if (oldspeed===4){
-          speedpwm=91;
-        }
-      }else{
-        //speedpwm=50-12*speed;
-        if (oldspeed===0){
-          speedpwm=50;
-        }
-        if (oldspeed===1){
-          speedpwm=26;
-        }
-        if (oldspeed===2){
-          speedpwm=14;
-        }
-        if (oldspeed===3){
-          speedpwm=9;
-        }
-        if (oldspeed===4){
-          speedpwm=4;
-        }
-      };
+
+      setOldSpeed();
 
       // one time timer to set boost to false and set back oldspeed
       let boosttimer = Timer.set(Cfg.get('app.boost.time'), false, function() {
@@ -376,41 +322,8 @@ MQTT.sub(topicsubconfig, function(conn, topic, msg) {
   };
 //konec pogojev za fan
 // določitev hitrosti ventilatorja glede na groupA - A ali B ventilator
-if (Cfg.get('app.pwm.gra')){
-  //speedpwm=50+12*speed;
-  if (speed===0){
-    speedpwm=50;
-  }
-  if (speed===1){
-    speedpwm=72;
-  }
-  if (speed===2){
-    speedpwm=83;
-  }
-  if (speed===3){
-    speedpwm=87;
-  }
-  if (speed===4){
-    speedpwm=91;
-  }
-}else{
-  //speedpwm=50-12*speed;
-  if (speed===0){
-    speedpwm=50;
-  }
-  if (speed===1){
-    speedpwm=26;
-  }
-  if (speed===2){
-    speedpwm=14;
-  }
-  if (speed===3){
-    speedpwm=9;
-  }
-  if (speed===4){
-    speedpwm=4;
-  }
-};
+
+  setSpeed();
 
   Timer.del(oldtimer);
   let tm = Timer.now();
@@ -426,22 +339,7 @@ if (Cfg.get('app.pwm.gra')){
     print("PWM set to config speed:", speedpwm);
     PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
     mqttconnectionnew = MQTT.isConnected();
-    if (mqttconnectionnew === true){
-      if (mqttconnection === false){
-        let msg = JSON.stringify({type: "startupfan", domId: Cfg.get('app.home'), userId: Cfg.get('app.user'), currentFanSpeed: speed, timeChangeDirection: Cfg.get('app.pwm.time')});
-        print(topicpubstate, '->', msg);
-        MQTT.pub(topicpubstate, msg, 1);
-        print ("Objavi podatek na server ker je povezava nazaj --> MQTT connectionnew je: ", mqttconnectionnew);
-        mqttconnection = mqttconnectionnew;
-      } else {
-        print ("MQTT povezava je vseskozi aktivna");
-        mqttconnection = mqttconnectionnew;
-      }
-    } else {
-      print ("Trenutna MQTT povezava je padla");
-      mqttconnection = mqttconnectionnew;
-    }
-
+    mqttReEstablished();
   }, null);
   oldtimer = newtimer;
 //konec MQTT.sub
@@ -465,14 +363,11 @@ if (Cfg.get('app.pwm.gra')){
     print(JSON.stringify(args));
   });
 
-
   RPC.addHandler('Status', function(){
     let g = Cfg.get('app.pwm.gra');
     let n = Cfg.get('app.pwm.night');
     return {gra:g, night:n};
   });
-
-
 
   RPC.addHandler('Connected', function(){
     let connected = MQTT.isConnected();
@@ -482,27 +377,3 @@ if (Cfg.get('app.pwm.gra')){
 
 
 /*
- 
-  var delayInMilliseconds = 10000; //10 second
-  setTimeout(function() {
-      var sta = { enable: true, ssid: g('s').value, pass: g('p').value, bssid: g('bssid').checked===true ? g('b').innerText : '' };		
-      var config = { wifi: { sta: sta, ap: { enable: false } } }; 
-      var Http = new XMLHttpRequest();
-      var url="/rpc/Connected";
-      Http.open("GET", url);
-      Http.send();
-      Http.onreadystatechange = (e) => {
-          argget=JSON.parse(Http.responseText);
-      if(argget.mqtt==true){
-             rpc_call("Config.Set", function (resp) {
-             bs.disabled = false;
-             bs.style.background = old;
-             bss[S]("class", "");
-             if(!resp)
-               return;
-             wl[H] = "Konfiguracija shranjena";
-             window.location.href = "index.html";
-             }, { config, save: true, reboot: true});
-      }
-      }   		        
-  }, delayInMilliseconds);	
