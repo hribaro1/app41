@@ -39,9 +39,10 @@ config_schema:
   - ["provision.btn.pin", "i", 0, {title: "Reset button GPIO pin"}]
   - ["provision.btn.hold_ms", "i", 5000, {title: "Hold interval in milliseconds. -1 to disable, 0 to reset if held on boot, > 0 to reset if held at runtime for this long."}]
   - ["provision.led.active_high", "b", true, {title: "True if LED is on when output is high (1)"}]
-  - ["provision.led.stable_state", "i", 3, {title: "True if LED is on when output is high (1)"}]
-  - ["provision.led.timeout", "i", 120, {title: "True if LED is on when output is high (1)"}]
-  - ["provision.led.max_state", "i", 0, {title: "True if LED is on when output is high (1)"}]
+  - ["provision.led.pin", "i", 2, {title: "GPIO pin to which LED is connected, default -1, if > 0 blinking will indicate current state"}]  
+  - ["provision.stable_state", "i", 3, {title: "True if LED is on when output is high (1)"}]
+  - ["provision.timeout", "i", 120, {title: "True if LED is on when output is high (1)"}]
+  - ["provision.max_state", "i", 0, {title: "True if LED is on when output is high (1)"}]
 
 #gcp parametri
   - ["gcp.token_ttl", "i", 83100, {title: "GCP token"}]
