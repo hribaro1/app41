@@ -78,6 +78,5 @@ libs:
   - origin: https://github.com/mongoose-os-libs/provision
   - origin: https://github.com/mongoose-os-libs/adc
 
-
 # Used by the mos tool to catch mos binaries incompatible with this file format
 manifest_version: 2017-09-29
