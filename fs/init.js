@@ -367,27 +367,6 @@ MQTT.sub(topicsubconfig, function(conn, topic, msg) {
       print("Ventilator HITROST == 4 --> BOOST");
       Cfg.set({app: {pwm: {val: 4}}});
       speed=4;
-      setSpeed();
-      print ("Nastavitev hitrosti - speedpwm: ", speedpwm);
-      print ("Nastavitev hitrosti - config: ", Cfg.get('app.pwm.val'));
-      PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
-      //objavi na strežnik le če je MQTT povezan --> mora objaviti pod user in ne pod ventilator, da se potem vsi sinhronizirajo -> torej na topicpubeventshtml
-      if (MQTT.isConnected()) {  
-        let msg = JSON.stringify({domId: Cfg.get('app.home'), userId: Cfg.get('app.user'), boost: Cfg.get('app.mode.boost'), auto: Cfg.get('app.mode.avto'), summer: Cfg.get('app.mode.summer'), night: Cfg.get('app.mode.night'), speed: speed});
-        print(topicpubeventshtml, '->', msg);
-        MQTT.pub(topicpubeventshtml, msg, 1);
-      };
-      //zbriše prejšnji in starta nov timer, ki se ponavlja z zakasnitvijo kot nastavljeno v parametrih
-        Timer.del(oldtimer);
-        let newtimer = Timer.set(Cfg.get('app.pwm.time'), Timer.REPEAT, function() {
-         speedpwm = 99-speed-speedpwm;
-         print("PWM set to config speed:", speedpwm);
-         PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
-         mqttconnectionnew = MQTT.isConnected();
-         mqttReEstablished();
-        }, null);
-        oldtimer = newtimer;
-    //konec nastavljanja hitrosti
     //nastavi boost timer, da ugasne oziroma prestavi nazaj na oldspeed
       let boosttimer = Timer.set(Cfg.get('app.boost.time'), false, function() {
         Cfg.set({app: {mode: {boost: false}}});
@@ -397,16 +376,6 @@ MQTT.sub(topicsubconfig, function(conn, topic, msg) {
           print(topicpubeventshtml, '->', msg);
           MQTT.pub(topicpubeventshtml, msg, 1);
         };
-        Timer.del(oldtimer);
-        let newtimer = Timer.set(Cfg.get('app.pwm.time'), Timer.REPEAT, function() {
-          speedpwm = 99-oldspeed-speedpwm;
-          print("Boost time ended. Setting BOOST OFF AND speed back to previous speed:", oldspeed);
-          print("PWM set to config speed:", speedpwm);
-          PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
-          mqttconnectionnew = MQTT.isConnected();
-          mqttReEstablished();
-        }, null);
-        oldtimer = newtimer;
       }, null);
 
     } else {
@@ -414,29 +383,33 @@ MQTT.sub(topicsubconfig, function(conn, topic, msg) {
       print("Ventilator HITROST == BOOST--> OLDSPEED");
       speed= Cfg.get('app.old.speed');
       Cfg.set({app: {pwm: {val: speed}}});
-      setSpeed();
-      print ("Mastavitev hitrosti - speedpwm: ", speedpwm);
-      print ("Nastavitev hitrosti - config: ", Cfg.get('app.pwm.val'));
-      PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
+    }
 
-      if (MQTT.isConnected()) {  
-        let msg = JSON.stringify({domId: Cfg.get('app.home'), userId: Cfg.get('app.user'), boost: Cfg.get('app.mode.boost'), auto: Cfg.get('app.mode.avto'), summer: Cfg.get('app.mode.summer'), night: Cfg.get('app.mode.night'), speed: speed});
-        print(topicpubeventshtml, '->', msg);
-        MQTT.pub(topicpubeventshtml, msg, 1);
-      };
-      //zbriše prejšnji in starta nov timer, ki se ponavlja z zakasnitvijo kot nastavljeno v parametrih
+
+    setSpeed();
+    print ("Nastavitev hitrosti - speedpwm: ", speedpwm);
+    print ("Nastavitev hitrosti - config: ", Cfg.get('app.pwm.val'));
+    PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
+    //objavi na strežnik le če je MQTT povezan --> mora objaviti pod user in ne pod ventilator, da se potem vsi sinhronizirajo -> torej na topicpubeventshtml
+    if (MQTT.isConnected()) {  
+      let msg = JSON.stringify({domId: Cfg.get('app.home'), userId: Cfg.get('app.user'), boost: Cfg.get('app.mode.boost'), auto: Cfg.get('app.mode.avto'), summer: Cfg.get('app.mode.summer'), night: Cfg.get('app.mode.night'), speed: speed});
+      print(topicpubeventshtml, '->', msg);
+      MQTT.pub(topicpubeventshtml, msg, 1);
+    };
+    //zbriše prejšnji in starta nov timer, ki se ponavlja z zakasnitvijo kot nastavljeno v parametrih
       Timer.del(oldtimer);
       let newtimer = Timer.set(Cfg.get('app.pwm.time'), Timer.REPEAT, function() {
-        speedpwm = 99-speed-speedpwm;
-        print("PWM set to config speed:", speedpwm);
-        PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
-        mqttconnectionnew = MQTT.isConnected();
-        mqttReEstablished();
+       speedpwm = 99-speed-speedpwm;
+       print("PWM set to config speed:", speedpwm);
+       PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
+       mqttconnectionnew = MQTT.isConnected();
+       mqttReEstablished();
       }, null);
       oldtimer = newtimer;
-    //konec nastavljanja hitrosti
 
-    }
+
+
+
   });
 
   RPC.addHandler('ControlAuto', function(args) {
@@ -698,54 +671,15 @@ MQTT.sub(topicsubconfig, function(conn, topic, msg) {
             print("BOOST gre na OFF in HITROST == BOOST--> OLDSPEED");
             speed= Cfg.get('app.old.speed');
             Cfg.set({app: {pwm: {val: speed}}});
-            setSpeed();
-            print ("Mastavitev hitrosti - speedpwm: ", speedpwm);
-            print ("Nastavitev hitrosti - config: ", Cfg.get('app.pwm.val'));
-            PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
-      
-            if (MQTT.isConnected()) {  
-              let msg = JSON.stringify({domId: Cfg.get('app.home'), userId: Cfg.get('app.user'), boost: Cfg.get('app.mode.boost'), auto: Cfg.get('app.mode.avto'), summer: Cfg.get('app.mode.summer'), night: Cfg.get('app.mode.night'), speed: speed});
-              print(topicpubeventshtml, '->', msg);
-              MQTT.pub(topicpubeventshtml, msg, 1);
-            };
-            //zbriše prejšnji in starta nov timer, ki se ponavlja z zakasnitvijo kot nastavljeno v parametrih
-            Timer.del(oldtimer);
-            let newtimer = Timer.set(Cfg.get('app.pwm.time'), Timer.REPEAT, function() {
-              speedpwm = 99-speed-speedpwm;
-              print("PWM set to config speed:", speedpwm);
-              PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
-              mqttconnectionnew = MQTT.isConnected();
-              mqttReEstablished();
-            }, null);
-            oldtimer = newtimer;
+
           //konec nastavljanja hitrosti            
 
-          } else {
+          }  else {
             print("Ventilator HITROST == 4 --> BOOST");
             //nastavi hitrost 4
             Cfg.set({app: {mode: {boost: true}}});
             Cfg.set({app: {pwm: {val: 4}}});
             speed=4;
-            setSpeed();
-            print ("Nastavitev hitrosti - speedpwm: ", speedpwm);
-            print ("Nastavitev hitrosti - config: ", Cfg.get('app.pwm.val'));
-            PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
-            //objavi na strežnik le če je MQTT povezan --> mora objaviti pod user in ne pod ventilator, da se potem vsi sinhronizirajo -> torej na topicpubeventshtml
-            if (MQTT.isConnected()) {  
-              let msg = JSON.stringify({domId: Cfg.get('app.home'), userId: Cfg.get('app.user'), boost: Cfg.get('app.mode.boost'), auto: Cfg.get('app.mode.avto'), summer: Cfg.get('app.mode.summer'), night: Cfg.get('app.mode.night'), speed: speed});
-              print(topicpubeventshtml, '->', msg);
-              MQTT.pub(topicpubeventshtml, msg, 1);
-            };
-            //zbriše prejšnji in starta nov timer, ki se ponavlja z zakasnitvijo kot nastavljeno v parametrih
-              Timer.del(oldtimer);
-              let newtimer = Timer.set(Cfg.get('app.pwm.time'), Timer.REPEAT, function() {
-               speedpwm = 99-speed-speedpwm;
-               print("PWM set to config speed:", speedpwm);
-               PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
-               mqttconnectionnew = MQTT.isConnected();
-               mqttReEstablished();
-              }, null);
-              oldtimer = newtimer;
           //konec nastavljanja hitrosti
             //nastavi boost timer, da ugasne oziroma prestavi nazaj na oldspeed
             let boosttimer = Timer.set(Cfg.get('app.boost.time'), false, function() {
@@ -756,18 +690,30 @@ MQTT.sub(topicsubconfig, function(conn, topic, msg) {
                 print(topicpubeventshtml, '->', msg);
                 MQTT.pub(topicpubeventshtml, msg, 1);
               };
-              Timer.del(oldtimer);
-              let newtimer = Timer.set(Cfg.get('app.pwm.time'), Timer.REPEAT, function() {
-                speedpwm = 99-oldspeed-speedpwm;
-                print("Boost time ended. Setting BOOST OFF AND speed back to previous speed:", oldspeed);
-                print("PWM set to config speed:", speedpwm);
-                PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
-                mqttconnectionnew = MQTT.isConnected();
-                mqttReEstablished();
-              }, null);
-              oldtimer = newtimer;
             }, null);
           }
+
+          setSpeed();
+          print ("Mastavitev hitrosti - speedpwm: ", speedpwm);
+          print ("Nastavitev hitrosti - config: ", Cfg.get('app.pwm.val'));
+          PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
+    
+          if (MQTT.isConnected()) {  
+            let msg = JSON.stringify({domId: Cfg.get('app.home'), userId: Cfg.get('app.user'), boost: Cfg.get('app.mode.boost'), auto: Cfg.get('app.mode.avto'), summer: Cfg.get('app.mode.summer'), night: Cfg.get('app.mode.night'), speed: speed});
+            print(topicpubeventshtml, '->', msg);
+            MQTT.pub(topicpubeventshtml, msg, 1);
+          };
+          //zbriše prejšnji in starta nov timer, ki se ponavlja z zakasnitvijo kot nastavljeno v parametrih
+          Timer.del(oldtimer);
+          let newtimer = Timer.set(Cfg.get('app.pwm.time'), Timer.REPEAT, function() {
+            speedpwm = 99-speed-speedpwm;
+            print("PWM set to config speed:", speedpwm);
+            PWM.set(Cfg.get('app.pin'), 1000, speedpwm/100);
+            mqttconnectionnew = MQTT.isConnected();
+            mqttReEstablished();
+          }, null);
+          oldtimer = newtimer;
+
           //konec nastavitve boost
           setStateZero();
         };
