@@ -32,9 +32,10 @@ config_schema:
   - ["app.mode.avto", "b", false, {title: "Auto mode - on/off"}]    #avto namesto auto, ker je auto reserved key 
   - ["app.mode.boost", "b", false, {title: "Boost mode - on/off"}]
   - ["app.mode.summer", "b", false, {title: "Summer mode - on/off"}]
+  - ["app.cfg.rst", "b", true, {title: "Device in reset mode and can pull config from device to server"}]
   - ["app.night.speed", "i", 2, {title: "Maximum night speed"}]
   - ["app.old.speed", "i", 0, {title: "oldSpeed of fans"}]   
-  - ["app.boost.time", "i", 3600000, {title: "Boost countdown time"}]   
+  - ["app.boost.time", "i", 100000, {title: "Boost countdown time"}]   
   - ["device.id", "bairFan??????"]
   - ["provision.btn.pin", "i", 0, {title: "Reset button GPIO pin"}]
   - ["provision.btn.hold_ms", "i", 5000, {title: "Hold interval in milliseconds. -1 to disable, 0 to reset if held on boot, > 0 to reset if held at runtime for this long."}]
