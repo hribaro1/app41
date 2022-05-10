@@ -20,6 +20,8 @@ let topicpubeventshtml = '/devices/' + Cfg.get('device.id') + '/events/html';
 // declare variables
 
 let speed = Cfg.get('app.pwm.val');
+let apppin = Cfg.get('app.pin');
+let apppwmgra = Cfg.get('app.pwm.gra');
 let oldspeed = Cfg.get('app.old.speed');
 let speedpwm = 50;
 let mqttconnection = false;
@@ -55,7 +57,7 @@ function setStateZero() {        //puting to 0 input states variables for RF rec
 }
 
 function setSpeed () {             //setting speed in percentage PWM based on speed value 1..4 and config parameter for start direction and speed value from server
-  if (Cfg.get('app.pwm.gra')){
+  if (apppwmgra){
     //speedpwm=50+12*speed;
     if (speed===0){
       speedpwm=50;
@@ -96,7 +98,7 @@ function setSpeed () {             //setting speed in percentage PWM based on sp
 
 function SetOldSpeed() {   //setting speed in percentage PWM based on speed value 1..4 and config parameter for start direction based on oldspeed --> return fromboost
   
-  if (Cfg.get('app.pwm.gra')){
+  if (apppwmgra){
     //speedpwm=50+12*speed;
     if (oldspeed===0){
       speedpwm=50;
@@ -210,6 +212,14 @@ MQTT.sub(topicsubconfig, function(conn, topic, msg) {
  MQTT.sub(topicsubcommand, function(conn, topic, msg) {
 //  {“speed”: 2, “auto”: false, “boost”: false, “night”: false, “summer”: false, "boostCountDown":3600000}
   let obj = JSON.parse(msg) || {};
+  
+  // takoj izračunamo in postavimo hitrost ventilatorja zato, da je hiter odziv
+  speed=obj.speed;
+  setSpeed();
+  PWM.set(apppin, 1000, speedpwm/100);  
+ // konec takojšnje postavitve na določeno hitrost oziroma odzivnost ventilatorja
+
+
   Cfg.set({app: {pwm: {val: obj.speed}}});
   Cfg.set({app: {mode: {avto: obj.auto}}});
   Cfg.set({app: {mode: {night: obj.night}}});
