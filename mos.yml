@@ -35,12 +35,12 @@ config_schema:
   - ["app.cfg.rst", "b", true, {title: "Device in reset mode and can pull config from device to server"}]
   - ["app.night.speed", "i", 2, {title: "Maximum night speed"}]
   - ["app.old.speed", "i", 0, {title: "oldSpeed of fans"}]   
-  - ["app.boost.time", "i", 100000, {title: "Boost countdown time"}]   
+  - ["app.boost.time", "i", 3600000, {title: "Boost countdown time"}]   
   - ["device.id", "bairFan??????"]
   - ["provision.btn.pin", "i", 0, {title: "Reset button GPIO pin"}]
   - ["provision.btn.hold_ms", "i", 5000, {title: "Hold interval in milliseconds. -1 to disable, 0 to reset if held on boot, > 0 to reset if held at runtime for this long."}]
   - ["provision.led.active_high", "b", true, {title: "True if LED is on when output is high (1)"}]
-  - ["provision.led.pin", "i", 2, {title: "GPIO pin to which LED is connected, default -1, if > 0 blinking will indicate current state"}]  
+  - ["provision.led.pin", "i", 19, {title: "GPIO pin to which LED is connected, default -1, if > 0 blinking will indicate current state"}]  
   - ["provision.stable_state", "i", 3, {title: "True if LED is on when output is high (1)"}]
   - ["provision.timeout", "i", 120, {title: "True if LED is on when output is high (1)"}]
   - ["provision.max_state", "i", 0, {title: "True if LED is on when output is high (1)"}]
@@ -52,7 +52,7 @@ config_schema:
   - ["wifi.ap", "o", {title: "WiFi Access Point Config"}]
   - ["wifi.ap.enable", "b", true, {title: "Enable"}]
   - ["wifi.ap.ssid", "s", "bairFan??????", {title: "SSID"}]
-  - ["wifi.ap.pass", "s", {title: "password"}]
+  - ["wifi.ap.pass", "s", "bossplast", {title: "password"}]
 
 # sta parametri
   - ["wifi.sta", "o", {title: "WiFi Station Config"}]
