@@ -26,8 +26,8 @@ config_schema:
   - ["app.name", "s", "name", {title: "Name of device"}]
   - ["app.pwm.time", "i", 70000, {title: "miliseconds period for changing direction"}]
   - ["app.pwm.val", "i", 0, {title: "Current speed value"}]
-  - ["app.pwm.gra", "b", true, {title: "PWM StartWayOut - A or B fan"}]
-  - ["app.pwm.night", "b", true, {title: "Night fan - group"}]
+  - ["app.pwm.gra", "b", false, {title: "PWM StartWayOut - A or B fan"}]
+  - ["app.pwm.night", "b", false, {title: "Night fan - group"}]
   - ["app.mode.night", "b", false, {title: "Night mode - on/off"}] 
   - ["app.mode.avto", "b", false, {title: "Auto mode - on/off"}]    #avto namesto auto, ker je auto reserved key 
   - ["app.mode.boost", "b", false, {title: "Boost mode - on/off"}]
