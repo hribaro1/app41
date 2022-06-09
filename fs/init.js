@@ -92,7 +92,7 @@ function setSpeed () {             //setting speed in percentage PWM based on sp
       speedpwm=4;
     }
   }
-  print("Hitrost nastavljena na: ", speedpwm);
+  print("Hitrost nastavljena znotraj setSpeed na: ", speedpwm);
 };
 
 
@@ -133,7 +133,7 @@ function SetOldSpeed() {   //setting speed in percentage PWM based on speed valu
       speedpwm=4;
     }
   }
-  print("Hitrost nastavljena na: ", speedpwm);
+  print("Hitrost nastavljena znotrja oldSpeed na: ", speedpwm);
 };
 
 function mqttReEstablished() {
